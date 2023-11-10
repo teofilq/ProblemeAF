@@ -1,0 +1,70 @@
+#include <vector>
+#include <unordered_set>
+#include <functional> // Pentru std::function
+
+using namespace std;
+
+class Solution {
+public:
+    bool possibleBipartition(int N, vector<vector<int>>& dislikes) {
+        vector<vector<int>> graph(N + 1);
+        vector<int> color(N + 1, 0);
+
+        for (auto& edge : dislikes) {
+            graph[edge[0]].push_back(edge[1]);
+            graph[edge[1]].push_back(edge[0]);
+        }
+        
+        function<bool(int, int)> dfsBipartition = [&](int node, int c) {
+            if (color[node] != 0) return color[node] == c;
+            color[node] = c;
+            for (int neighbor : graph[node]) {
+                if (!dfsBipartition(neighbor, -c)) return false;
+            }
+            return true;
+        };
+        
+        for (int i = 1; i <= N; ++i) {
+            if (color[i] == 0 && !dfsBipartition(i, 1)) return false;
+        }
+        
+        return true;
+    }
+
+    vector<int> findOrder(int numCourses, vector<vector<int>>& prerequisites) {
+        vector<unordered_set<int>> graph(numCourses);
+        for (const auto& p : prerequisites) {
+            graph[p[1]].insert(p[0]);
+        }
+
+        vector<bool> visited(numCourses, false), onPath(numCourses, false);
+        vector<int> result;
+
+        for (int i = 0; i < numCourses; ++i) {
+            if (!visited[i] && !dfsCourse(graph, visited, onPath, result, i)) {
+                return {};
+            }
+        }
+
+        reverse(result.begin(), result.end());
+        return result;
+    }
+
+private:
+    bool dfsCourse(const vector<unordered_set<int>>& graph, vector<bool>& visited, vector<bool>& onPath, vector<int>& result, int node) {
+        if (visited[node]) return true;
+        if (onPath[node]) return false;
+
+        onPath[node] = visited[node] = true;
+
+        for (int neighbor : graph[node]) {
+            if (!dfsCourse(graph, visited, onPath, result, neighbor)) {
+                return false;
+            }
+        }
+
+        result.push_back(node);
+        onPath[node] = false;
+        return true;
+    }
+};
